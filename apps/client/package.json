@@ -1,0 +1,19 @@
+{
+  "name": "@squeaky/client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --pretty false",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@squeaky/shared": "*",
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.7"
+  }
+}
