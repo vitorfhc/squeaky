@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;600;700&display=swap');
 :root {
-  color: #eaf4ff;
+  color: #f5f9ff;
   background: #08111f;
   font-family: Inter, system-ui, sans-serif;
   font-synthesis: none;
@@ -21,6 +21,7 @@ body::after {
   position: fixed;
   inset: 0;
   pointer-events: none;
+  z-index: 0;
   opacity: 0.15;
   background-image:
     linear-gradient(#8be4e322 1px, transparent 1px),
@@ -56,7 +57,7 @@ button {
   display: block;
 }
 .brand small {
-  font-size: 9px;
+  font-size: 11px;
   color: #80d9d8;
 }
 .mark {
@@ -95,7 +96,7 @@ h1 em {
   letter-spacing: 0.22em;
 }
 .lede {
-  color: #a9b8c9;
+  color: #d6e2f0;
   line-height: 1.7;
   max-width: 520px;
 }
@@ -119,7 +120,7 @@ h1 em {
   display: block;
 }
 .profile-head small {
-  color: #8395a7;
+  color: #c0d0e2;
   margin-top: 5px;
   font-size: 12px;
 }
@@ -128,6 +129,7 @@ h1 em {
   height: 48px;
   border-radius: 50%;
   background: #f472b6;
+  color: #08111f;
   display: grid;
   place-items: center;
   font: 22px 'Archivo Black';
@@ -151,8 +153,8 @@ h1 em {
   font: 25px 'Archivo Black';
 }
 .stats span {
-  color: #7f93a6;
-  font-size: 9px;
+  color: #c3d4e5;
+  font-size: 11px;
   letter-spacing: 0.16em;
   margin-top: 5px;
 }
@@ -161,7 +163,7 @@ h1 em {
   border-top: 1px solid #263a50;
 }
 .panel h3 {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.18em;
   margin-top: 24px;
 }
@@ -174,18 +176,18 @@ h1 em {
   align-items: center;
   gap: 6px;
   margin: 12px 0;
-  font-size: 12px;
+  font-size: 13px;
 }
 .panel li span {
   margin-left: auto;
-  color: #8495a6;
+  color: #c0d0e2;
 }
 kbd {
   background: #23364a;
   border: 1px solid #3a526b;
   border-radius: 4px;
   padding: 4px 6px;
-  font: 10px monospace;
+  font: 11px monospace;
 }
 button {
   background: #5de0da;
@@ -218,12 +220,12 @@ button:hover {
 }
 .notice b {
   color: #f4ca55;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
 }
 .notice span {
-  color: #8797a8;
-  font-size: 11px;
+  color: #c0d0e2;
+  font-size: 12px;
   margin-top: 6px;
 }
 .auth,
@@ -242,7 +244,7 @@ button:hover {
   margin: 28px 0 15px;
 }
 .auth label {
-  color: #9dafc1;
+  color: #cfdded;
   font-size: 12px;
   font-weight: 600;
 }
@@ -261,8 +263,9 @@ button:hover {
   border-color: #59ded8;
 }
 .fine {
-  font-size: 11px;
-  color: #718296;
+  font-size: 12px;
+  line-height: 1.65;
+  color: #bdccdc;
 }
 .code {
   display: block;
@@ -280,7 +283,7 @@ button:hover {
   color: #7ddedb;
   background: transparent;
   padding: 10px 0;
-  font-size: 11px;
+  font-size: 12px;
 }
 .secondary {
   background: #273a4c;
@@ -292,6 +295,8 @@ button:hover {
   margin-top: 28px;
 }
 #game {
+  position: relative;
+  z-index: 1;
   width: 100vw;
   height: 100vh;
   overflow: hidden;

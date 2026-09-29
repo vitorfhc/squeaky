@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  GAME_CONFIG,
   attachedPosition,
   bombShouldExplode,
   firstImpact,
@@ -14,18 +15,26 @@ import {
 const player = (id: string, x: number, y: number, alive = true): PlayerState => ({
   id,
   displayName: id,
+  color: 0x4da3ff,
   position: { x, y },
   radius: 25,
   velocity: { x: 0, y: 0 },
   aim: { x: 1, y: 0 },
   alive,
+  health: alive ? GAME_CONFIG.playerHealth : 0,
+  grounded: true,
+  shrunk: false,
+  jumpHeld: false,
   isBot: false,
   score: 0,
   lastThrowAt: 0,
+  detonationReadyAt: 0,
+  bombCharges: [0, 0, 0],
 });
 const bomb = (x = 0, y = 0): BombState => ({
   id: 'bomb',
   ownerId: 'owner',
+  color: 0xff9f43,
   position: { x, y },
   radius: 12,
   velocity: { x: 1, y: 0 },
@@ -60,8 +69,10 @@ describe('deterministic gameplay rules', () => {
     });
   });
   it('includes a target edge in blast range and excludes farther targets', () => {
-    expect(isInBlastRange(bomb(), player('edge', 215, 0))).toBe(true);
-    expect(isInBlastRange(bomb(), player('outside', 216, 0))).toBe(false);
+    expect(isInBlastRange(bomb(), player('edge', GAME_CONFIG.bombBlastRadius + 25, 0))).toBe(true);
+    expect(isInBlastRange(bomb(), player('outside', GAME_CONFIG.bombBlastRadius + 26, 0))).toBe(
+      false,
+    );
   });
   it('treats player radius crossing the safe boundary as zone exposure', () => {
     const zone = {
@@ -70,9 +81,10 @@ describe('deterministic gameplay rules', () => {
       nextRadius: 50,
       phaseIndex: 0,
       phaseStartedAt: 0,
+      phaseStartRadius: 100,
       shrinking: false,
     };
-    expect(isOutsideZone(player('safe', 75, 0), zone)).toBe(false);
+    expect(isOutsideZone(player('safe', 75, 900), zone)).toBe(false);
     expect(isOutsideZone(player('fog', 76, 0), zone)).toBe(true);
   });
   it('selects exactly one living player as winner', () => {
@@ -88,6 +100,7 @@ describe('deterministic gameplay rules', () => {
         nextRadius: 50,
         phaseIndex: 0,
         phaseStartedAt: 0,
+        phaseStartRadius: 100,
         shrinking: false,
       },
       players: { a: player('a', 0, 0, false), b: player('b', 0, 0, true) },

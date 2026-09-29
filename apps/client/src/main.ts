@@ -3,7 +3,7 @@ import type Phaser from 'phaser';
 import type { MatchState } from '@squeaky/shared';
 import { createGame } from './game/createGame';
 import { LocalGameSession } from './game/LocalGameSession';
-import { loadProfile, makeProfile, saveProfile, type Profile } from './profile';
+import { loadProfile, makeProfile, saveProfile } from './profile';
 
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing app root');
@@ -32,15 +32,18 @@ const renderCode = (): void => {
     `<section class="card auth"><p class="eyebrow">DEVELOPMENT CODE</p><h1>Check right here.</h1><p>This code is shown on screen because email delivery is intentionally mocked.</p><output class="code">${pending.code}</output><form id="code-form"><label>One-time code<input id="code" inputmode="numeric" pattern="[0-9]{6}" required autofocus/></label><button>Enter arena</button></form><button class="link" id="back">Use another email</button></section>`,
   );
   document.querySelector('#back')?.addEventListener('click', renderLogin);
+  const codeField = document.querySelector<HTMLInputElement>('#code');
+  codeField?.addEventListener('input', () => codeField.setCustomValidity(''));
   document.querySelector('#code-form')?.addEventListener('submit', (event) => {
     event.preventDefault();
-    const code = document.querySelector<HTMLInputElement>('#code')?.value;
-    if (code !== pending?.code) {
-      document.querySelector('#code')?.setCustomValidity('Use the development code shown above.');
-      document.querySelector<HTMLInputElement>('#code')?.reportValidity();
+    const request = pending;
+    if (!request) return renderLogin();
+    if (codeField?.value !== request.code) {
+      codeField?.setCustomValidity('Use the development code shown above.');
+      codeField?.reportValidity();
       return;
     }
-    profile = makeProfile(pending.email);
+    profile = makeProfile(request.email);
     saveProfile(profile);
     renderMenu();
   });
@@ -48,7 +51,7 @@ const renderCode = (): void => {
 const renderMenu = (): void => {
   if (!profile) return renderLogin();
   shell(
-    `<section class="hero"><div><p class="eyebrow">WELCOME BACK, ${profile.displayName.toUpperCase()}</p><h1>One arena.<br/><em>One survivor.</em></h1><p class="lede">A fast local proving ground for deterministic bomb combat.</p><button class="play" id="play">PLAY LOCAL MATCH <span>→</span></button><div class="notice"><b>● OFFLINE PROTOTYPE</b><span>Multiplayer networking is not active yet. Opponents are local bots.</span></div></div><aside class="card panel"><div class="profile-head"><div class="avatar">${profile.displayName[0]?.toUpperCase() ?? 'P'}</div><div><b>${profile.displayName}</b><small>${profile.email}</small></div></div><div class="stats"><div><b>${profile.score}</b><span>SCORE</span></div><div><b>${profile.coins}</b><span>COINS</span></div><div><b>${profile.wins}</b><span>WINS</span></div><div><b>${profile.matchesPlayed}</b><span>MATCHES</span></div></div><hr/><h3>CONTROLS</h3><ul><li><kbd>WASD</kbd> / arrows <span>Move</span></li><li><kbd>MOUSE</kbd> <span>Aim</span></li><li><kbd>CLICK</kbd> / <kbd>SPACE</kbd> <span>Throw bomb</span></li></ul><button class="link" id="logout">Sign out</button></aside></section>`,
+    `<section class="hero"><div><p class="eyebrow">WELCOME BACK, ${profile.displayName.toUpperCase()}</p><h1>Climb higher.<br/><em>Stay alive.</em></h1><p class="lede">Explore an arena three times larger. Hold left-click to charge up to 1.6× force, release to throw, and right-click to detonate your newest bomb with a 5-second cooldown. Shots inherit your running speed. Your blue bombs are safe; enemy colors hurt. Faster blinking means less fuse time.</p><button class="play" id="play">PLAY LOCAL MATCH <span>→</span></button><div class="notice"><b>● OFFLINE PROTOTYPE</b><span>Multiplayer networking is not active yet. Opponents are local bots.</span></div></div><aside class="card panel"><div class="profile-head"><div class="avatar">${profile.displayName[0]?.toUpperCase() ?? 'P'}</div><div><b>${profile.displayName}</b><small>${profile.email}</small></div></div><div class="stats"><div><b>${profile.score}</b><span>SCORE</span></div><div><b>${profile.coins}</b><span>COINS</span></div><div><b>${profile.wins}</b><span>WINS</span></div><div><b>${profile.matchesPlayed}</b><span>MATCHES</span></div></div><hr/><h3>CONTROLS</h3><ul><li><kbd>A / D</kbd> / <kbd>← / →</kbd> <span>Move</span></li><li><kbd>SPACE</kbd> / <kbd>W</kbd> / <kbd>↑</kbd> <span>Jump</span></li><li><kbd>CTRL</kbd> <span>Hold to shrink; half speed; no jump</span></li><li><kbd>MOUSE</kbd> <span>Aim</span></li><li><kbd>LEFT MOUSE</kbd> <span>Hold to charge; release to throw</span></li><li><kbd>RIGHT MOUSE</kbd> <span>Detonate newest bomb</span></li></ul><p class="fine">3s invulnerable countdown, then 3s before bombs unlock. Charges reload in 2s; throws stay 0.5s apart. The corner panel shows each reload and the 5s detonation cooldown. Stay between the lethal storm walls.</p><button class="link" id="logout">Sign out</button></aside></section>`,
   );
   document.querySelector('#play')?.addEventListener('click', startMatch);
   document.querySelector('#logout')?.addEventListener('click', () => {
@@ -84,4 +87,5 @@ const finishMatch = (state: MatchState): void => {
   document.querySelector('#replay')?.addEventListener('click', startMatch);
   document.querySelector('#menu')?.addEventListener('click', renderMenu);
 };
-profile ? renderMenu() : renderLogin();
+if (profile) renderMenu();
+else renderLogin();

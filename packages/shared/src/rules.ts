@@ -20,11 +20,78 @@ export const normalize = (v: Vector2): Vector2 => {
 };
 export const bombShouldExplode = (bomb: BombState, now: number): boolean =>
   !bomb.exploded && now >= bomb.explodeAt;
+/** Integrate an increasing blink frequency so the flash phase stays continuous. */
+export const bombBlinkOn = (bomb: BombState, now: number): boolean => {
+  const duration = Math.max(1, bomb.explodeAt - bomb.thrownAt) / 1000;
+  const elapsed = Math.max(0, Math.min(duration, (now - bomb.thrownAt) / 1000));
+  const cycles =
+    GAME_CONFIG.bombBlinkStartHz * elapsed +
+    ((GAME_CONFIG.bombBlinkEndHz - GAME_CONFIG.bombBlinkStartHz) * elapsed ** 2) / (2 * duration);
+  return cycles % 1 < 0.5;
+};
 export const isInBlastRange = (bomb: BombState, target: Circle): boolean =>
   distanceSquared(bomb.position, target.position) <=
   (GAME_CONFIG.bombBlastRadius + target.radius) ** 2;
 export const isOutsideZone = (target: Circle, zone: ShrinkingZoneState): boolean =>
-  distanceSquared(target.position, zone.center) > (zone.radius - target.radius) ** 2;
+  Math.abs(target.position.x - zone.center.x) + target.radius > zone.radius;
+
+export const availableBombCharges = (player: PlayerState, now: number): number =>
+  player.bombCharges.filter((readyAt) => readyAt <= now).length;
+
+export const chargedThrowForce = (heldMs: number): number =>
+  1 +
+  Math.max(0, Math.min(1, heldMs / GAME_CONFIG.bombChargeMs)) * (GAME_CONFIG.maxBombThrowForce - 1);
+
+export const bombLaunchPosition = (player: Circle): Vector2 => ({
+  x: player.position.x,
+  y: player.position.y - 8 * (player.radius / GAME_CONFIG.playerRadius),
+});
+
+export const bombLaunchVelocity = (
+  aim: Vector2,
+  force = 1,
+  throwerVelocity: Vector2 = { x: 0, y: 0 },
+): Vector2 => {
+  const direction = normalize(aim);
+  const strength = Number.isFinite(force)
+    ? Math.max(1, Math.min(GAME_CONFIG.maxBombThrowForce, force))
+    : 1;
+  return {
+    x: direction.x * GAME_CONFIG.bombSpeed * strength + throwerVelocity.x,
+    y: (direction.y * GAME_CONFIG.bombSpeed - GAME_CONFIG.bombLiftSpeed) * strength,
+  };
+};
+
+/** Consume one slot only after both the global throw interval and its reload have elapsed. */
+export const tryThrowBomb = (
+  player: PlayerState,
+  id: EntityId,
+  now: number,
+  force = 1,
+): BombState | undefined => {
+  const slot = player.bombCharges.findIndex((readyAt) => readyAt <= now);
+  if (!player.alive || slot < 0 || now - player.lastThrowAt < GAME_CONFIG.bombCooldownMs)
+    return undefined;
+  player.lastThrowAt = now;
+  player.bombCharges[slot] = now + GAME_CONFIG.bombReloadMs;
+  return {
+    id,
+    ownerId: player.id,
+    color: player.color,
+    position: bombLaunchPosition(player),
+    radius: GAME_CONFIG.bombRadius,
+    velocity: bombLaunchVelocity(player.aim, force, player.velocity),
+    thrownAt: now,
+    explodeAt: now + GAME_CONFIG.bombFuseMs,
+    exploded: false,
+  };
+};
+
+export const applyBombDamage = (bomb: BombState, player: PlayerState): void => {
+  if (!player.alive || player.id === bomb.ownerId || !isInBlastRange(bomb, player)) return;
+  player.health = Math.max(0, player.health - GAME_CONFIG.bombDamage);
+  player.alive = player.health > 0;
+};
 
 export const circleHitsObstacle = (circle: Circle, obstacle: ObstacleState): boolean => {
   const x = Math.max(obstacle.x, Math.min(circle.position.x, obstacle.x + obstacle.width));
@@ -40,7 +107,7 @@ export const firstImpact = (
   obstacles: ObstacleState[],
   samples = 80,
 ): BombAttachment | undefined => {
-  for (let i = 1; i <= samples; i += 1) {
+  for (let i = 0; i <= samples; i += 1) {
     const t = i / samples;
     const position = { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t };
     const hitPlayer = players.find(
@@ -89,12 +156,13 @@ export const zoneAtTime = (
         ...result,
         shrinking: true,
         nextRadius: phase.radius,
-        radius: result.radius + (phase.radius - result.radius) * progress,
+        radius: result.phaseStartRadius + (phase.radius - result.phaseStartRadius) * progress,
       };
     }
     result = {
       ...result,
       radius: phase.radius,
+      phaseStartRadius: phase.radius,
       nextRadius: phases[result.phaseIndex + 1]?.radius ?? phase.radius,
       phaseIndex: result.phaseIndex + 1,
       phaseStartedAt: result.phaseStartedAt + phase.waitMs + phase.shrinkMs,

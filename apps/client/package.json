@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
+    "test": "vitest run",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -14,6 +15,7 @@
     "phaser": "^3.90.0"
   },
   "devDependencies": {
-    "vite": "^7.1.7"
+    "vite": "^7.1.7",
+    "vitest": "^3.2.4"
   }
 }
